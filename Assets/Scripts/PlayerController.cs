@@ -4,37 +4,48 @@ public class PlayerController : MonoBehaviour
 {
     // Deðiþkenler
     [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 7f; // Karakterin hareket hýzý. Inspector'dan deðiþtirilebilir.
+    [SerializeField] private float moveSpeed = 7f;
 
-    private Rigidbody rb; // Karakterin fiziksel bedeni (Rigidbody component'i)
-    private Vector2 moveInput; // Kullanýcýnýn klavye girdisini (WASD) tutacak deðiþken
+    private Rigidbody rb;
+    private Vector2 moveInput;
+
+    // YENÝ: Animator referansýný tutacak deðiþken
+    private Animator animator;
 
     // Oyun baþladýðýnda bir kere çalýþýr
     void Start()
     {
-        // Rigidbody component'ini Player objesinden bul ve rb deðiþkenine ata.
         rb = GetComponent<Rigidbody>();
+        // YENÝ: Player objesinin altýndaki (child) Animator component'ini bul ve ata.
+        // GetComponentInChildren kullanýyoruz çünkü Animator, script'in olduðu obje'de deðil, onun altýndaki Astronaut modelinde.
+        animator = GetComponentInChildren<Animator>();
     }
 
-    // Her frame (kare) güncellenir. Input (girdi) almak için idealdir.
+    // Her frame (kare) güncellenir.
     void Update()
     {
-        // Yatay (A, D tuþlarý) ve Dikey (W, S tuþlarý) girdileri alýyoruz.
-        // Bu deðerler -1 ile 1 arasýnda yumuþak bir geçiþle döner.
         moveInput.x = Input.GetAxis("Horizontal");
         moveInput.y = Input.GetAxis("Vertical");
+
+        // YENÝ: Animator'un isWalking parametresini güncelle.
+        // Eðer hareket girdisi varsa (vektörün büyüklüðü 0'dan büyükse) true, yoksa false gönder.
+        if (moveInput.magnitude > 0.1f)
+        {
+            animator.SetBool("isWalking", true);
+        }
+        else
+        {
+            animator.SetBool("isWalking", false);
+        }
     }
 
     // Fizik hesaplamalarý için belirli ve sabit aralýklarla çalýþýr.
-    // Hareket kodunu burada yazmak daha stabildir.
     void FixedUpdate()
     {
-        // Aldýðýmýz 2D girdiyi (x, y), 3D dünya hareketine (x, z) çeviriyoruz.
-        // Karakterin yukarý/aþaðý (Y ekseni) hareket etmesini istemiyoruz.
         Vector3 movement = new Vector3(moveInput.x, 0f, moveInput.y);
 
-        // Rigidbody'nin hýzýný, hareket yönü * hýz deðiþkenimizle ayarlýyoruz.
-        // Time.fixedDeltaTime ile çarparak frame rate'ten baðýmsýz, pürüzsüz bir hareket saðlarýz.
-        rb.velocity = movement * moveSpeed;
+        // Hareketi normalize edip hýzla çarparak çapraz gidiþlerde hýzlanmayý önleyebiliriz.
+        // Bu daha pürüzsüz bir hareket saðlar.
+        rb.velocity = movement.normalized * moveSpeed;
     }
 }
